@@ -1,0 +1,15 @@
+/_build/
+/cover/
+/deps/
+/doc/
+/.fetch
+erl_crash.dump
+*.ez
+/tmp/
+finance_rustler_addon-*.tar
+
+# Rust build artifacts
+/native/finance_rustler_addon/target/
+
+# Compiled NIF artifact (built from native/ by rustler)
+/priv/native/

@@ -1,0 +1,13 @@
+[package]
+name = "finance_rustler_addon"
+version = "0.1.0"
+edition = "2021"
+authors = []
+
+[lib]
+name = "finance_rustler_addon"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.38"
