@@ -36,9 +36,7 @@ defmodule FinanceRustler.Solver do
     nif_versions: ["2.15"],
     targets: ~w(
       x86_64-unknown-linux-gnu
-      x86_64-unknown-linux-musl
       aarch64-unknown-linux-gnu
-      aarch64-unknown-linux-musl
     )
 
   @impl Finance.Solver
