@@ -1,5 +1,6 @@
 # FinanceRustler
 
+[![CI](https://github.com/tubedude/finance_rustler/actions/workflows/ci.yml/badge.svg)](https://github.com/tubedude/finance_rustler/actions/workflows/ci.yml)
 [![Hex.pm](https://img.shields.io/hexpm/v/finance_rustler.svg)](https://hex.pm/packages/finance_rustler)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-8e5ea2.svg)](https://hexdocs.pm/finance_rustler)
 
