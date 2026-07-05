@@ -1,11 +1,11 @@
 [package]
-name = "finance_rustler_addon"
+name = "finance_rustler"
 version = "0.1.0"
 edition = "2021"
 authors = []
 
 [lib]
-name = "finance_rustler_addon"
+name = "finance_rustler"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
 

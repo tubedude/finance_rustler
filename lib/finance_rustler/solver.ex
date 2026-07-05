@@ -1,4 +1,4 @@
-defmodule FinanceRustlerAddon.Solver do
+defmodule FinanceRustler.Solver do
   @moduledoc """
   A native `Finance.Solver` backed by a Rust NIF — the same safeguarded Newton
   (`rtsafe`) the pure-Elixir default uses, ported to Rust.
@@ -8,14 +8,14 @@ defmodule FinanceRustlerAddon.Solver do
 
       # mix.exs
       {:finance, "~> 1.4"},
-      {:finance_rustler_addon, "~> 0.1"}
+      {:finance_rustler, "~> 0.1"}
 
       # config/config.exs
-      config :finance, solver: FinanceRustlerAddon.Solver
+      config :finance, solver: FinanceRustler.Solver
 
   or per call:
 
-      Finance.CashFlow.xirr(flows, solver: FinanceRustlerAddon.Solver)
+      Finance.CashFlow.xirr(flows, solver: FinanceRustler.Solver)
 
   The result matches the default solver — both find the same root to the
   requested `:precision`. This backend exists for throughput on long-horizon
@@ -24,7 +24,7 @@ defmodule FinanceRustlerAddon.Solver do
 
   @behaviour Finance.Solver
 
-  use Rustler, otp_app: :finance_rustler_addon, crate: "finance_rustler_addon"
+  use Rustler, otp_app: :finance_rustler, crate: "finance_rustler"
 
   @impl Finance.Solver
   def solve(flows, opts) do

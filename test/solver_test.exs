@@ -1,7 +1,7 @@
-defmodule FinanceRustlerAddon.SolverTest do
+defmodule FinanceRustler.SolverTest do
   use ExUnit.Case, async: true
 
-  @native FinanceRustlerAddon.Solver
+  @native FinanceRustler.Solver
 
   describe "parity with the default (pure-Elixir) solver" do
     test "reproduces the xirr regression anchors exactly" do

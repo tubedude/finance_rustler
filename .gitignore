@@ -6,10 +6,10 @@
 erl_crash.dump
 *.ez
 /tmp/
-finance_rustler_addon-*.tar
+finance_rustler-*.tar
 
 # Rust build artifacts
-/native/finance_rustler_addon/target/
+/native/finance_rustler/target/
 
 # Compiled NIF artifact (built from native/ by rustler)
 /priv/native/

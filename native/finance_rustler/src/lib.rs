@@ -130,4 +130,4 @@ fn nif_solve(
     }
 }
 
-rustler::init!("Elixir.FinanceRustlerAddon.Solver");
+rustler::init!("Elixir.FinanceRustler.Solver");
