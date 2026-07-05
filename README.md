@@ -29,7 +29,10 @@ def deps do
 end
 ```
 
-Building the NIF needs a Rust toolchain (`cargo`/`rustc`) on the build machine.
+Precompiled binaries ship for Linux — `x86_64` and `aarch64`, `gnu` and `musl` —
+so on those targets nothing extra is needed. On other platforms, set
+`FINANCE_RUSTLER_BUILD=1` and have a Rust toolchain (`cargo`/`rustc`) to compile
+the NIF from source.
 
 ## Usage
 
@@ -79,16 +82,19 @@ mix run bench/native_vs_pure.exs   # single solve, by flow length
 
 ```bash
 mix deps.get
-mix compile        # builds native/finance_rustler via cargo
-mix test           # parity tests against the pure-Elixir solver
+FINANCE_RUSTLER_BUILD=1 mix compile   # builds native/finance_rustler via cargo
+FINANCE_RUSTLER_BUILD=1 mix test      # parity tests against the pure-Elixir solver
 ```
 
 The parity tests assert that every result — single and batched, success and
 error — matches `finance`'s default solver exactly.
 
-A future release will ship precompiled binaries via
-[`rustler_precompiled`](https://hex.pm/packages/rustler_precompiled), so
-downstream projects won't need a Rust toolchain of their own.
+Downstream projects on Linux get the precompiled binary via
+[`rustler_precompiled`](https://hex.pm/packages/rustler_precompiled) and need no
+Rust toolchain. Cutting a release: push a `v*` tag, let the release workflow
+cross-build the Linux NIFs and attach them to the GitHub release, then run
+`mix rustler_precompiled.download FinanceRustler.Solver --all` to generate the
+checksum file, commit it, and `mix hex.publish`.
 
 ## License
 

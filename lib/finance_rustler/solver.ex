@@ -25,7 +25,21 @@ defmodule FinanceRustler.Solver do
 
   @behaviour Finance.Solver
 
-  use Rustler, otp_app: :finance_rustler, crate: "finance_rustler"
+  @version Mix.Project.config()[:version]
+
+  use RustlerPrecompiled,
+    otp_app: :finance_rustler,
+    crate: "finance_rustler",
+    base_url: "https://github.com/tubedude/finance_rustler/releases/download/v#{@version}",
+    force_build: System.get_env("FINANCE_RUSTLER_BUILD") in ["1", "true"],
+    version: @version,
+    nif_versions: ["2.15"],
+    targets: ~w(
+      x86_64-unknown-linux-gnu
+      x86_64-unknown-linux-musl
+      aarch64-unknown-linux-gnu
+      aarch64-unknown-linux-musl
+    )
 
   @impl Finance.Solver
   def solve(flows, opts) do

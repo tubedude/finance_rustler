@@ -30,7 +30,10 @@ defmodule FinanceRustler.MixProject do
       # The dependency is one-way: this package depends on Finance, never the
       # reverse. Needs Finance 1.5+ for the `solve_many/2` batch callback.
       {:finance, "~> 1.5"},
-      {:rustler, "~> 0.38"},
+      {:rustler_precompiled, "~> 0.8"},
+      # Only needed to build the NIF from source; consumers use the precompiled
+      # binary unless FINANCE_RUSTLER_BUILD is set.
+      {:rustler, "~> 0.38", optional: true},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:benchee, "~> 1.3", only: :dev, runtime: false}
     ]
@@ -40,9 +43,10 @@ defmodule FinanceRustler.MixProject do
     [
       licenses: ["MIT"],
       links: %{"finance" => "https://hex.pm/packages/finance", "GitHub" => @source_url},
-      # Ship the Rust source, never the build artifacts under target/.
+      # Ship the Rust source and the precompiled-binary checksums, never the
+      # build artifacts under target/.
       files: ~w(lib native/finance_rustler/src native/finance_rustler/Cargo.toml
-                mix.exs README.md CHANGELOG.md LICENSE .formatter.exs)
+                checksum-*.exs mix.exs README.md CHANGELOG.md LICENSE .formatter.exs)
     ]
   end
 end
