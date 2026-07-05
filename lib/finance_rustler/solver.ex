@@ -18,8 +18,9 @@ defmodule FinanceRustler.Solver do
       Finance.CashFlow.xirr(flows, solver: FinanceRustler.Solver)
 
   The result matches the default solver — both find the same root to the
-  requested `:precision`. This backend exists for throughput on long-horizon
-  flows (and, later, batched solves), not to change any numbers.
+  requested `:precision`. This backend exists for throughput: `solve_many/2` runs
+  a whole batch in one call, parallelized across a rayon thread pool, and single
+  solves are faster on long-horizon flows. It changes no numbers.
   """
 
   @behaviour Finance.Solver
@@ -28,22 +29,41 @@ defmodule FinanceRustler.Solver do
 
   @impl Finance.Solver
   def solve(flows, opts) do
-    times = Enum.map(flows, fn {t, _amount} -> t * 1.0 end)
-    amounts = Enum.map(flows, fn {_t, amount} -> amount * 1.0 end)
+    {times, amounts} = split(flows)
 
-    guess = Keyword.fetch!(opts, :guess) * 1.0
-    tolerance = Keyword.fetch!(opts, :tolerance) * 1.0
-    max_iterations = Keyword.fetch!(opts, :max_iterations)
-
-    case nif_solve(times, amounts, guess, tolerance, max_iterations) do
-      {:ok, rate} -> {:ok, Float.round(rate, Keyword.fetch!(opts, :precision))}
-      {:did_not_converge, _} -> {:error, :did_not_converge}
-    end
+    times
+    |> nif_solve(amounts, guess(opts), tolerance(opts), Keyword.fetch!(opts, :max_iterations))
+    |> to_result(Keyword.fetch!(opts, :precision))
   end
 
-  # Replaced by the NIF at load time; this body only runs if the crate failed to
-  # load (e.g. the native library wasn't compiled).
+  @impl Finance.Solver
+  def solve_many(batch, opts) do
+    problems = Enum.map(batch, &split/1)
+    precision = Keyword.fetch!(opts, :precision)
+
+    problems
+    |> nif_solve_many(guess(opts), tolerance(opts), Keyword.fetch!(opts, :max_iterations))
+    |> Enum.map(&to_result(&1, precision))
+  end
+
+  defp split(flows) do
+    {Enum.map(flows, fn {t, _a} -> t * 1.0 end), Enum.map(flows, fn {_t, a} -> a * 1.0 end)}
+  end
+
+  defp guess(opts), do: Keyword.fetch!(opts, :guess) * 1.0
+  defp tolerance(opts), do: Keyword.fetch!(opts, :tolerance) * 1.0
+
+  # `+ 0.0` collapses a negative zero, matching `Finance.Solver.Newton`.
+  defp to_result({:ok, rate}, precision), do: {:ok, Float.round(rate, precision) + 0.0}
+  defp to_result({:did_not_converge, _rate}, _precision), do: {:error, :did_not_converge}
+
+  # Replaced by the NIFs at load time; these bodies only run if the crate failed
+  # to load (e.g. the native library wasn't compiled).
   defp nif_solve(_times, _amounts, _guess, _tolerance, _max_iterations) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  defp nif_solve_many(_batch, _guess, _tolerance, _max_iterations) do
     :erlang.nif_error(:nif_not_loaded)
   end
 end

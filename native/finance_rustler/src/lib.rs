@@ -2,6 +2,7 @@
 //! a Rust port of the pure-Elixir `Finance.Solver.Newton`. Kept deliberately in
 //! lockstep with that implementation so results match to `:precision`.
 
+use rayon::prelude::*;
 use rustler::Atom;
 
 mod atoms {
@@ -11,12 +12,15 @@ mod atoms {
     }
 }
 
-// Net present value: Σ amount / (1 + rate)^t
+// Net present value: Σ amount / (1 + rate)^t. Discounts with a negative exponent
+// so the factor underflows to 0 at high rates instead of overflowing — matching
+// the pure-Elixir `present_value/2`, which does the same to dodge `:math.pow`
+// raising on overflow.
 fn npv(times: &[f64], amounts: &[f64], rate: f64) -> f64 {
     times
         .iter()
         .zip(amounts)
-        .map(|(&t, &a)| a / (1.0 + rate).powf(t))
+        .map(|(&t, &a)| a * (1.0 + rate).powf(-t))
         .sum()
 }
 
@@ -25,7 +29,7 @@ fn dnpv(times: &[f64], amounts: &[f64], rate: f64) -> f64 {
     times
         .iter()
         .zip(amounts)
-        .map(|(&t, &a)| -t * a / (1.0 + rate).powf(t + 1.0))
+        .map(|(&t, &a)| -t * a * (1.0 + rate).powf(-(t + 1.0)))
         .sum()
 }
 
@@ -116,6 +120,13 @@ fn rtsafe(times: &[f64], amounts: &[f64], guess: f64, tol: f64, max_iter: i64) -
     x.is_finite().then_some(x)
 }
 
+fn result(times: &[f64], amounts: &[f64], guess: f64, tol: f64, max_iter: i64) -> (Atom, f64) {
+    match rtsafe(times, amounts, guess, tol, max_iter) {
+        Some(rate) => (atoms::ok(), rate),
+        None => (atoms::did_not_converge(), 0.0),
+    }
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 fn nif_solve(
     times: Vec<f64>,
@@ -124,10 +135,21 @@ fn nif_solve(
     tol: f64,
     max_iter: i64,
 ) -> (Atom, f64) {
-    match rtsafe(&times, &amounts, guess, tol, max_iter) {
-        Some(rate) => (atoms::ok(), rate),
-        None => (atoms::did_not_converge(), 0.0),
-    }
+    result(&times, &amounts, guess, tol, max_iter)
+}
+
+// Solve a whole batch in one call, in parallel across a rayon thread pool.
+#[rustler::nif(schedule = "DirtyCpu")]
+fn nif_solve_many(
+    batch: Vec<(Vec<f64>, Vec<f64>)>,
+    guess: f64,
+    tol: f64,
+    max_iter: i64,
+) -> Vec<(Atom, f64)> {
+    batch
+        .par_iter()
+        .map(|(times, amounts)| result(times, amounts, guess, tol, max_iter))
+        .collect()
 }
 
 rustler::init!("Elixir.FinanceRustler.Solver");

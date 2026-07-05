@@ -43,4 +43,31 @@ defmodule FinanceRustler.SolverTest do
       assert Finance.CashFlow.xirr(flows, solver: @native) == Finance.CashFlow.xirr(flows)
     end
   end
+
+  describe "native batch (solve_many) parity" do
+    test "irr_many matches the default solver, including failed series" do
+      series = [[-1000, 1100], [-1000, 500, 500, 300], [100, 200], [], [-500, 250, 250, 100]]
+
+      assert Finance.CashFlow.irr_many(series, solver: @native) ==
+               Finance.CashFlow.irr_many(series)
+    end
+
+    test "xirr_many matches the default solver" do
+      series = [
+        [{~D[2019-01-01], -1000}, {~D[2020-01-01], 1100}],
+        [{~D[2015-06-01], 1_000_000}, {~D[2015-10-01], -2_200_000}, {~D[2015-11-01], -800_000}],
+        [{~D[2019-01-01], -1000}, {~D[2020-01-01], 1200}]
+      ]
+
+      assert Finance.CashFlow.xirr_many(series, solver: @native) ==
+               Finance.CashFlow.xirr_many(series)
+    end
+
+    test "the batch solves a large portfolio in one rayon-parallel call" do
+      series = for _ <- 1..500, do: [-1000, 300, 400, 500]
+      results = Finance.CashFlow.irr_many(series, solver: @native)
+      assert length(results) == 500
+      assert Enum.all?(results, &(&1 == {:ok, 0.088963}))
+    end
+  end
 end
