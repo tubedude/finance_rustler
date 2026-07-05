@@ -1,45 +1,81 @@
 # FinanceRustler
 
-A native solver backend for [`finance`](https://hex.pm/packages/finance): the
-safeguarded Newton (`rtsafe`) root-finder behind `irr`/`xirr`/`rate`/`ytm`,
-implemented in Rust via [Rustler](https://github.com/rusterlium/rustler).
+[![Hex.pm](https://img.shields.io/hexpm/v/finance_rustler.svg)](https://hex.pm/packages/finance_rustler)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-8e5ea2.svg)](https://hexdocs.pm/finance_rustler)
 
-It plugs into `finance`'s `Finance.Solver` behaviour. The dependency is one-way —
-`finance_rustler` depends on `finance`, never the reverse — so the core
-library stays pure and unaware of this package (the Nx + EXLA / Ecto + adapter
-model).
+A native solver backend for [`finance`](https://hex.pm/packages/finance) — the
+safeguarded Newton (`rtsafe`) root-finder behind `irr`, `xirr`, `rate`, and
+`ytm`, ported to Rust with [Rustler](https://github.com/rusterlium/rustler).
+
+It plugs into `finance`'s `Finance.Solver` behaviour as a swappable backend, the
+way [`EXLA`](https://hex.pm/packages/exla) plugs into Nx. The dependency runs one
+way — `finance_rustler` depends on `finance`, never the reverse — so the core
+library stays pure and unaware this package exists.
+
+The numbers don't change: results match the built-in solver to the requested
+`:precision`. What changes is throughput, above all `solve_many/2`, which solves
+a whole batch in one call across a rayon thread pool.
+
+## Installation
+
+Add both packages — `finance` for the API, `finance_rustler` for the backend:
+
+```elixir
+def deps do
+  [
+    {:finance, "~> 1.5"},
+    {:finance_rustler, "~> 0.1"}
+  ]
+end
+```
+
+Building the NIF needs a Rust toolchain (`cargo`/`rustc`) on the build machine.
 
 ## Usage
 
-Add both packages to your project:
-
-```elixir
-# mix.exs
-{:finance, "~> 1.4"},
-{:finance_rustler, "~> 0.1"}
-```
-
-Then point the solver at this backend, globally:
+Point `finance` at the backend once, in config:
 
 ```elixir
 # config/config.exs
 config :finance, solver: FinanceRustler.Solver
 ```
 
-or per call:
+or choose it per call:
 
 ```elixir
 Finance.CashFlow.xirr(flows, solver: FinanceRustler.Solver)
+
+Finance.CashFlow.xirr_many(portfolio, solver: FinanceRustler.Solver)
 ```
 
-Results are identical to the default solver — both find the same root to the
-requested `:precision`. This backend is for throughput on long-horizon flows
-(and, later, batched solves), not to change any numbers.
+Nothing else changes — the same `finance` functions, the same results.
 
-## Building
+## Performance
 
-This package compiles a Rust NIF, so it needs a Rust toolchain
-(`cargo`/`rustc`) at build time:
+The backend earns its keep on batches. `bench/solve_many.exs` pits `solve_many/2`
+against the pure-Elixir solver (chunked `Task.async_stream`) and a plain
+sequential map — median time to solve the whole batch:
+
+| batch                  | native (rayon) | pure (chunked) | sequential |
+| ---------------------- | -------------- | -------------- | ---------- |
+| 1,000 × 4-flow         | 2.4 ms         | 7.6 ms         | 8.1 ms     |
+| 1,000 × 60-period loan | 14.8 ms        | 23.7 ms        | 185 ms     |
+| 5,000 × 60-period loan | 114 ms         | 98 ms          | 1,004 ms   |
+
+Both parallel strategies beat a sequential map by an order of magnitude. The
+native backend leads on batches of many small series — one NIF crossing plus
+rayon, against one process spawn per series — and keeps the arithmetic off the
+BEAM schedulers. On large batches of costlier series the chunked pure solver
+draws level, so this backend is an option for throughput, not a requirement.
+
+Run them yourself:
+
+```bash
+mix run bench/solve_many.exs       # batch: native vs pure vs sequential
+mix run bench/native_vs_pure.exs   # single solve, by flow length
+```
+
+## Building and testing
 
 ```bash
 mix deps.get
@@ -47,11 +83,13 @@ mix compile        # builds native/finance_rustler via cargo
 mix test           # parity tests against the pure-Elixir solver
 ```
 
-A future release will ship precompiled binaries via `rustler_precompiled` so
-end users don't need Rust installed.
+The parity tests assert that every result — single and batched, success and
+error — matches `finance`'s default solver exactly.
 
-## Status
+A future release will ship precompiled binaries via
+[`rustler_precompiled`](https://hex.pm/packages/rustler_precompiled), so
+downstream projects won't need a Rust toolchain of their own.
 
-Early. The single-solve `Finance.Solver` implementation is in place and tested
-for parity; a batched `xirr_many`/`irr_many` API (the real throughput win) is
-planned.
+## License
+
+MIT — see [LICENSE](LICENSE).

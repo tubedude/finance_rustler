@@ -27,10 +27,9 @@ defmodule FinanceRustler.MixProject do
 
   defp deps do
     [
-      # Dev/test resolves Finance from the local checkout; a release switches this
-      # to {:finance, "~> 1.4"} from Hex. The dependency is one-way — Finance never
-      # references this package.
-      {:finance, path: "../finance-elixir"},
+      # The dependency is one-way: this package depends on Finance, never the
+      # reverse. Needs Finance 1.5+ for the `solve_many/2` batch callback.
+      {:finance, "~> 1.5"},
       {:rustler, "~> 0.38"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:benchee, "~> 1.3", only: :dev, runtime: false}
@@ -43,7 +42,7 @@ defmodule FinanceRustler.MixProject do
       links: %{"finance" => "https://hex.pm/packages/finance", "GitHub" => @source_url},
       # Ship the Rust source, never the build artifacts under target/.
       files: ~w(lib native/finance_rustler/src native/finance_rustler/Cargo.toml
-                mix.exs README.md .formatter.exs)
+                mix.exs README.md CHANGELOG.md LICENSE .formatter.exs)
     ]
   end
 end

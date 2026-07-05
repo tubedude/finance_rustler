@@ -7,7 +7,7 @@ defmodule FinanceRustler.Solver do
   solver at this module:
 
       # mix.exs
-      {:finance, "~> 1.4"},
+      {:finance, "~> 1.5"},
       {:finance_rustler, "~> 0.1"}
 
       # config/config.exs
