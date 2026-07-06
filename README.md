@@ -30,10 +30,10 @@ def deps do
 end
 ```
 
-Precompiled binaries ship for Linux — `x86_64` and `aarch64` (gnu) — so on those
-targets nothing extra is needed. On other platforms (musl, macOS, Windows), set
-`FINANCE_RUSTLER_BUILD=1` and have a Rust toolchain (`cargo`/`rustc`) to compile
-the NIF from source.
+Precompiled binaries ship for Linux (`x86_64`/`aarch64`, gnu) and macOS
+(`x86_64`/`aarch64`), so on those targets nothing extra is needed. On other
+platforms (musl, Windows), set `FINANCE_RUSTLER_BUILD=1` and have a Rust toolchain
+(`cargo`/`rustc`) to compile the NIF from source.
 
 ## Usage
 
@@ -90,12 +90,12 @@ FINANCE_RUSTLER_BUILD=1 mix test      # parity tests against the pure-Elixir sol
 The parity tests assert that every result — single and batched, success and
 error — matches `finance`'s default solver exactly.
 
-Downstream projects on Linux get the precompiled binary via
+Downstream projects on Linux and macOS get the precompiled binary via
 [`rustler_precompiled`](https://hex.pm/packages/rustler_precompiled) and need no
-Rust toolchain. Cutting a release: push a `v*` tag, let the release workflow
-cross-build the Linux NIFs and attach them to the GitHub release, then run
-`mix rustler_precompiled.download FinanceRustler.Solver --all` to generate the
-checksum file, commit it, and `mix hex.publish`.
+Rust toolchain. Cutting a release: push a `v*` tag, let the release workflow build
+the Linux and macOS NIFs and attach them to the GitHub release, then run
+`FINANCE_RUSTLER_BUILD=1 mix rustler_precompiled.download FinanceRustler.Solver --all`
+to generate the checksum file, commit it, and `mix hex.publish`.
 
 ## License
 
