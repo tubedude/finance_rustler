@@ -1,4 +1,4 @@
 %{
-  "libfinance_rustler-v0.1.0-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz" => "sha256:def2e62e09f497f74fb92d2e58a351b19853cc76a2f15d3f2cd4d39b6405fc24",
-  "libfinance_rustler-v0.1.0-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz" => "sha256:379c38f0737bae130217c621b0bec683b3ad0bbd1d0d533b32c292c20e5242c1",
+  "libfinance_rustler-v0.2.0-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz" => "sha256:74c3dc30aa65a078db09fbfc5c117fc953ccb6834253955cf1ce5f033317cfd7",
+  "libfinance_rustler-v0.2.0-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz" => "sha256:1b25f6d1a7f6cb773d932172077778aefd745ba2e348221bac96d28427ae2ef6",
 }
