@@ -44,6 +44,58 @@ defmodule FinanceRustler.SolverTest do
     end
   end
 
+  describe "guess-anchored bracket parity (finance >= 1.6.0)" do
+    test "finds the root of an even-crossing series like the default (numpy-financial #39)" do
+      # Two IRRs (~-1.8% and ~12%) with the NPV negative at both ends of the domain.
+      # The old endpoint-only bracket missed it; the interior scan finds it.
+      series = [
+        -217_500.0,
+        -217_500.0,
+        108_466.80462450592,
+        101_129.96439328062,
+        93_793.12416205535,
+        86_456.28393083003,
+        79_119.44369960476,
+        71_782.60346837944,
+        64_445.76323715414,
+        57_108.92300592884,
+        49_772.08277470355,
+        42_435.24254347826,
+        35_098.40231225296,
+        27_761.56208102766,
+        20_424.721849802358,
+        13_087.88161857707,
+        5_751.041387351768,
+        -1_585.7988438735192,
+        -8_922.639075098821,
+        -16_259.479306324123,
+        -23_596.31953754941,
+        -30_933.159768774713,
+        -38_270.0,
+        -45_606.8402312253,
+        -52_943.680462450604,
+        -60_280.520693675906,
+        -67_617.36092490121
+      ]
+
+      assert Finance.CashFlow.irr(series, solver: @native) == Finance.CashFlow.irr(series)
+      assert Finance.CashFlow.irr(series, solver: @native) == {:ok, 0.12}
+    end
+
+    test "selects the same guess-anchored root as the default on a multi-IRR series" do
+      # Roots at 25% and 400%; the guess picks which one comes back.
+      for guess <- [0.1, 3.0] do
+        native = Finance.CashFlow.irr([-1600, 10_000, -10_000], guess: guess, solver: @native)
+        default = Finance.CashFlow.irr([-1600, 10_000, -10_000], guess: guess)
+        assert native == default, "mismatch at guess=#{guess}"
+      end
+
+      # numpy-financial #28: nearest-the-guess root (~-76.9%), not the 185% root.
+      assert Finance.CashFlow.irr([-50, -100, 600, 300, -100], solver: @native) ==
+               Finance.CashFlow.irr([-50, -100, 600, 300, -100])
+    end
+  end
+
   describe "native batch (solve_many) parity" do
     test "irr_many matches the default solver, including failed series" do
       series = [[-1000, 1100], [-1000, 500, 500, 300], [100, 200], [], [-500, 250, 250, 100]]

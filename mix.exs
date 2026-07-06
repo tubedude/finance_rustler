@@ -1,7 +1,7 @@
 defmodule FinanceRustler.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/tubedude/finance_rustler"
 
   def project do
@@ -29,7 +29,7 @@ defmodule FinanceRustler.MixProject do
     [
       # The dependency is one-way: this package depends on Finance, never the
       # reverse. Needs Finance 1.5+ for the `solve_many/2` batch callback.
-      {:finance, "~> 1.5"},
+      {:finance, "~> 1.6"},
       {:rustler_precompiled, "~> 0.8"},
       # Only needed to build the NIF from source; consumers use the precompiled
       # binary unless FINANCE_RUSTLER_BUILD is set.

@@ -43,16 +43,60 @@ fn straddles_zero(a: f64, b: f64) -> bool {
     (a <= 0.0 && b >= 0.0) || (a >= 0.0 && b <= 0.0)
 }
 
-// Expand the upper bound until the NPV changes sign against `f_low`.
-fn bracket(times: &[f64], amounts: &[f64], f_low: f64) -> Option<f64> {
-    let mut high = 1.0;
-    while high <= 1.0e7 {
-        if straddles_zero(f_low, npv(times, amounts, high)) {
-            return Some(high);
-        }
-        high = high * 2.0 + 1.0;
+// Geometric grid for the bracket scan: grow `1 + rate` by 5% per step, up to 1e7.
+const SCAN_RATIO: f64 = 1.05;
+const SCAN_CAP: f64 = 1.0e7;
+
+fn grid_step(rate: f64) -> f64 {
+    (1.0 + rate) * SCAN_RATIO - 1.0
+}
+
+// Distance from the interval [low, high] to `guess`; an interval that contains the
+// guess wins outright.
+fn distance(low: f64, high: f64, guess: f64) -> f64 {
+    if low <= guess && guess <= high {
+        0.0
+    } else {
+        (low - guess).abs().min((high - guess).abs())
     }
-    None
+}
+
+// Walk a geometric grid of rates outward from the floor; among every adjacent-sample
+// sign change, keep the interval whose nearer edge sits closest to `guess`. Returns
+// the bracketing interval, or None when the NPV never crosses zero. Mirrors
+// `Finance.Shared.bracket/2`: sampling the interior (not just the extremes) finds a
+// root even when the curve crosses zero an even number of times, and anchoring to
+// `guess` selects the same root a guess-driven spreadsheet would.
+fn bracket(times: &[f64], amounts: &[f64], guess: f64) -> Option<(f64, f64)> {
+    let low = safe_low(times);
+    let mut prev = low;
+    let mut f_prev = npv(times, amounts, low);
+    let mut rate = grid_step(low);
+    let mut best: Option<(f64, f64)> = None;
+
+    while rate <= SCAN_CAP {
+        let f = npv(times, amounts, rate);
+
+        if straddles_zero(f_prev, f) {
+            best = match best {
+                Some(b) if distance(b.0, b.1, guess) <= distance(prev, rate, guess) => Some(b),
+                _ => Some((prev, rate)),
+            };
+
+            // Stop at the first sign change reaching the guess: it either contains
+            // the guess or is the nearest interval above it, and `best` already holds
+            // the nearest below.
+            if rate >= guess {
+                return best;
+            }
+        }
+
+        prev = rate;
+        f_prev = f;
+        rate = grid_step(rate);
+    }
+
+    best
 }
 
 fn inside(point: f64, xlo: f64, xhi: f64) -> bool {
@@ -62,12 +106,10 @@ fn inside(point: f64, xlo: f64, xhi: f64) -> bool {
 // The converged rate, or None when no root can be bracketed or the computation
 // went non-finite (extreme magnitudes — mirrors the Elixir overflow guard).
 fn rtsafe(times: &[f64], amounts: &[f64], guess: f64, tol: f64, max_iter: i64) -> Option<f64> {
-    let low = safe_low(times);
-    let f_low = npv(times, amounts, low);
-    let high = bracket(times, amounts, f_low)?;
+    let (low, high) = bracket(times, amounts, guess)?;
 
     // Orient so the NPV is negative at `xlo`, positive at `xhi`.
-    let (mut xlo, mut xhi) = if f_low < 0.0 {
+    let (mut xlo, mut xhi) = if npv(times, amounts, low) < 0.0 {
         (low, high)
     } else {
         (high, low)

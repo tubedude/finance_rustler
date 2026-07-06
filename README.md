@@ -24,8 +24,8 @@ Add both packages — `finance` for the API, `finance_rustler` for the backend:
 ```elixir
 def deps do
   [
-    {:finance, "~> 1.5"},
-    {:finance_rustler, "~> 0.1"}
+    {:finance, "~> 1.6"},
+    {:finance_rustler, "~> 0.2"}
   ]
 end
 ```
