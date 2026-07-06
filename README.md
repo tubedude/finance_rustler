@@ -30,10 +30,10 @@ def deps do
 end
 ```
 
-Precompiled binaries ship for Linux (`x86_64`/`aarch64`, gnu) and macOS
-(`x86_64`/`aarch64`), so on those targets nothing extra is needed. On other
-platforms (musl, Windows), set `FINANCE_RUSTLER_BUILD=1` and have a Rust toolchain
-(`cargo`/`rustc`) to compile the NIF from source.
+Precompiled binaries ship for Linux (`x86_64`/`aarch64`, gnu) and macOS on Apple
+Silicon (`aarch64`), so on those targets nothing extra is needed. On other
+platforms (Intel macOS, musl, Windows), set `FINANCE_RUSTLER_BUILD=1` and have a
+Rust toolchain (`cargo`/`rustc`) to compile the NIF from source.
 
 ## Usage
 

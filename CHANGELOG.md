@@ -10,7 +10,7 @@ Requires `finance ~> 1.6`.
   the NPV crossed zero an even number of times (a series with more than one IRR),
   and it ignored `:guess` when selecting among multiple roots. Both now match the
   default solver exactly, and the parity tests cover the multi-root cases.
-- Add precompiled binaries for macOS (`x86_64` and `aarch64` Apple Darwin)
+- Add a precompiled binary for macOS on Apple Silicon (`aarch64-apple-darwin`)
   alongside the existing Linux (`x86_64`/`aarch64` gnu) builds.
 
 ## 0.1.0
